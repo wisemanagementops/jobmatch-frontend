@@ -63,7 +63,7 @@ export default function ResumeBuilder() {
   // Form state
   const [contact, setContact] = useState({ name: '', email: '', phone: '', location: '', linkedin: '', portfolio: '' });
   const [targetRole, setTargetRole] = useState('');
-  const [education, setEducation] = useState([{ id: Date.now(), school: '', degree: '', field: '', graduation: '', gpa: '' }]);
+  const [education, setEducation] = useState([{ id: Date.now(), school: '', degree: '', field: '', graduation: '', gpa: '', location: '' }]);
   const [experience, setExperience] = useState([{ id: Date.now(), title: '', company: '', location: '', startDate: '', endDate: '', current: false, description: '', bullets: [], suggestions: null, loadingSuggestions: false }]);
   const [skills, setSkills] = useState([]);
   const [skillInput, setSkillInput] = useState('');
@@ -83,7 +83,7 @@ export default function ResumeBuilder() {
   };
 
   // Education handlers
-  const addEducation = () => setEducation([...education, { id: Date.now(), school: '', degree: '', field: '', graduation: '', gpa: '' }]);
+  const addEducation = () => setEducation([...education, { id: Date.now(), school: '', degree: '', field: '', graduation: '', gpa: '', location: '' }]);
   const removeEducation = (id) => education.length > 1 && setEducation(education.filter(e => e.id !== id));
   const updateEducation = (id, field, value) => setEducation(education.map(e => e.id === id ? { ...e, [field]: value } : e));
 
@@ -210,7 +210,8 @@ export default function ResumeBuilder() {
             degree: e.degree || '',
             field: e.field || '',
             graduation: e.graduation || '',
-            gpa: e.gpa || ''
+            gpa: e.gpa || '',
+            location: e.location || ''
           })),
         skills: skills || [],
         projects: getActiveSections().includes('projects') 
@@ -397,6 +398,8 @@ export default function ResumeBuilder() {
                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Degree (e.g., B.S., M.S.)" />
                   <input type="text" value={edu.field} onChange={(e) => updateEducation(edu.id, 'field', e.target.value)}
                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Field of Study" />
+                  <input type="text" value={edu.location || ''} onChange={(e) => updateEducation(edu.id, 'location', e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Location (e.g., Arlington, TX)" />
                   <input type="text" value={edu.graduation} onChange={(e) => updateEducation(edu.id, 'graduation', e.target.value)}
                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Graduation Year" />
                 </div>
@@ -428,6 +431,8 @@ export default function ResumeBuilder() {
                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Job Title *" />
                   <input type="text" value={exp.company} onChange={(e) => updateExperience(exp.id, 'company', e.target.value)}
                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Company *" />
+                  <input type="text" value={exp.location || ''} onChange={(e) => updateExperience(exp.id, 'location', e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Location (e.g., Portland, OR)" />
                   <input type="text" value={exp.startDate} onChange={(e) => updateExperience(exp.id, 'startDate', e.target.value)}
                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Start Date (e.g., Jan 2020)" />
                   <div className="flex items-center gap-2">

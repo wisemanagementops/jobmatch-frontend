@@ -16,9 +16,19 @@ export async function generatePDF(elementId, filename = 'resume') {
 
     // Wait for fonts and styles to load
     await document.fonts.ready;
-    
-    // Small delay to ensure everything is rendered
-    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Save original styles — the preview container applies scale(0.75) which
+    // distorts the capture.  Temporarily reset to full size for an accurate snapshot.
+    const origTransform = element.style.transform;
+    const origTransformOrigin = element.style.transformOrigin;
+    const origMarginBottom = element.style.marginBottom;
+
+    element.style.transform = 'none';
+    element.style.transformOrigin = 'top left';
+    element.style.marginBottom = '0';
+
+    // Small delay to let the browser re-layout at full size
+    await new Promise(resolve => setTimeout(resolve, 150));
 
     // Create canvas from HTML with optimized settings
     const canvas = await html2canvas(element, {
@@ -27,17 +37,17 @@ export async function generatePDF(elementId, filename = 'resume') {
       allowTaint: true,
       logging: false,
       backgroundColor: '#ffffff',
-      windowWidth: element.scrollWidth,
-      windowHeight: element.scrollHeight,
+      width: element.scrollWidth,
+      height: element.scrollHeight,
     });
 
-    // Calculate dimensions for US Letter size (8.5 x 11 inches)
-    const imgWidth = 210; // A4 width in mm
-    const pageHeight = 297; // A4 height in mm
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    
-    // For US Letter
-    const letterWidth = 215.9; // 8.5 inches
+    // Restore original styles immediately
+    element.style.transform = origTransform;
+    element.style.transformOrigin = origTransformOrigin;
+    element.style.marginBottom = origMarginBottom;
+
+    // US Letter dimensions in mm
+    const letterWidth = 215.9;  // 8.5 inches
     const letterHeight = 279.4; // 11 inches
 
     // Create PDF with US Letter size
@@ -48,30 +58,30 @@ export async function generatePDF(elementId, filename = 'resume') {
     });
 
     // Convert canvas to image
-    const imgData = canvas.toDataURL('image/png');
-    
-    // Calculate actual image height in mm for letter size
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+    // Calculate the image height in mm when scaled to letter width
     const actualImgHeight = (canvas.height * letterWidth) / canvas.width;
-    
-    // Add image to PDF
-    let heightLeft = actualImgHeight;
-    let position = 0;
 
-    // First page
-    pdf.addImage(imgData, 'PNG', 0, position, letterWidth, actualImgHeight);
-    heightLeft -= letterHeight;
-
-    // Add additional pages if needed
-    while (heightLeft > 0) {
-      position = heightLeft - actualImgHeight;
+    if (actualImgHeight <= letterHeight) {
+      // Content fits on one page — just add it
+      pdf.addImage(imgData, 'JPEG', 0, 0, letterWidth, actualImgHeight);
+    } else if (actualImgHeight <= letterHeight * 2) {
+      // Content fits on exactly two pages — split cleanly
+      pdf.addImage(imgData, 'JPEG', 0, 0, letterWidth, actualImgHeight);
       pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, letterWidth, actualImgHeight);
-      heightLeft -= letterHeight;
+      pdf.addImage(imgData, 'JPEG', 0, -letterHeight, letterWidth, actualImgHeight);
+    } else {
+      // Content is too long — scale it down to fit on one page
+      const scale = letterHeight / actualImgHeight;
+      const scaledWidth = letterWidth * scale;
+      const xOffset = (letterWidth - scaledWidth) / 2;
+      pdf.addImage(imgData, 'JPEG', xOffset, 0, scaledWidth, letterHeight);
     }
 
     // Download the PDF
     pdf.save(`${filename}.pdf`);
-    
+
     return true;
   } catch (error) {
     console.error('PDF Generation Error:', error);

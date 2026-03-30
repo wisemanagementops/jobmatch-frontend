@@ -11,12 +11,13 @@ export default function ClassicTemplate({ resume }) {
     <div 
       className="bg-white text-gray-900"
       style={{ 
-        width: '8.5in', 
-        minHeight: '11in', 
-        padding: '0.75in',
+        width: '8.5in',
+        height: '11in',
+        padding: '0.5in 0.6in',
         fontFamily: 'Georgia, "Times New Roman", serif',
-        fontSize: '10.5pt',
-        lineHeight: '1.5'
+        fontSize: '10pt',
+        lineHeight: '1.3',
+        overflow: 'hidden'
       }}
     >
       {/* Header */}

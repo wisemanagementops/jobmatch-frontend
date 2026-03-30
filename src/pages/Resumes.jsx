@@ -121,16 +121,15 @@ export default function Resumes() {
 
   // View resume - opens in viewer modal
   const handleView = async (resume) => {
-    setViewingResume(resume);
-    
     // For uploaded files, create a blob URL to view
     if (resume.original_file) {
+      setViewingResume(resume);
       try {
         const token = localStorage.getItem('token');
         const response = await fetch(`${API_BASE}/resumes/${resume.id}/view`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        
+
         if (response.ok) {
           const blob = await response.blob();
           const url = URL.createObjectURL(blob);
@@ -138,6 +137,15 @@ export default function Resumes() {
         }
       } catch (error) {
         console.error('View error:', error);
+      }
+    } else {
+      // For AI-built resumes, fetch the full resume data (list endpoint doesn't include work_experience, education, skills)
+      try {
+        const fullResume = await api.getResume(resume.id);
+        setViewingResume({ ...resume, ...fullResume.data });
+      } catch (error) {
+        console.error('View error:', error);
+        setViewingResume(resume);
       }
     }
   };
@@ -344,7 +352,7 @@ export default function Resumes() {
                       {viewingResume.education.map((edu, i) => (
                         <div key={i} className="mb-2">
                           <div className="flex justify-between items-baseline">
-                            <h3 className="font-semibold text-gray-900">{edu.school}</h3>
+                            <h3 className="font-semibold text-gray-900">{edu.school}{edu.location ? `, ${edu.location}` : ''}</h3>
                             <span className="text-sm text-gray-500 italic">{edu.graduation}</span>
                           </div>
                           <p className="text-gray-700">{edu.degree}{edu.field ? ` in ${edu.field}` : ''}{edu.gpa ? ` • GPA: ${edu.gpa}` : ''}</p>

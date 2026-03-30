@@ -11,11 +11,12 @@ export default function ModernTemplate({ resume, accentColor = '#2563eb' }) {
     <div 
       className="bg-white font-sans text-gray-800"
       style={{ 
-        width: '8.5in', 
-        minHeight: '11in', 
-        padding: '0.6in',
+        width: '8.5in',
+        height: '11in',
+        padding: '0.5in 0.6in',
         fontSize: '10pt',
-        lineHeight: '1.4'
+        lineHeight: '1.3',
+        overflow: 'hidden'
       }}
     >
       {/* Header */}

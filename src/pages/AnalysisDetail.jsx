@@ -839,42 +839,13 @@ export default function AnalysisDetail() {
                 )}
               </div>
 
-              {/* Download Options */}
-              <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm text-gray-600 mr-2">Download as:</span>
-                <button
-                  onClick={() => downloadAsText(analysis.tailored_resume_text, `resume-${analysis.company_name}`)}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg"
-                >
-                  📄 TXT
-                </button>
-                <button
-                  onClick={() => downloadAsDocx(analysis.tailored_resume_text, `resume-${analysis.company_name}`)}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg"
-                >
-                  📝 Word
-                </button>
-                <button
-                  onClick={() => copyToClipboard(analysis.tailored_resume_text)}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg"
-                >
-                  <Copy className="w-4 h-4" /> Copy
-                </button>
-                <button
-                  onClick={generateTailoredResume}
-                  disabled={generatingResume}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg ml-auto"
-                >
-                  <RefreshCw className={`w-4 h-4 ${generatingResume ? 'animate-spin' : ''}`} />
-                  Regenerate
-                </button>
-              </div>
-
               {/* Template Selector View */}
               <TemplateSelector
                 resumeText={analysis.tailored_resume_text}
                 userSubscription={userSubscription}
                 companyName={analysis.company_name}
+                onDownloadWord={() => downloadAsDocx(analysis.tailored_resume_text, `resume-${analysis.company_name}`)}
+                onDownloadText={() => downloadAsText(analysis.tailored_resume_text, `resume-${analysis.company_name}`)}
               />
             </>
           ) : (

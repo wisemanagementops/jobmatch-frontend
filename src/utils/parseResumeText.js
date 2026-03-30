@@ -276,30 +276,43 @@ function parseDateRange(text, obj) {
 function parseEducation(text) {
   const education = [];
   const lines = text.split('\n').filter(l => l.trim());
-  
+
   let current = null;
+  const degreePatterns = /Bachelor|Master|Ph\.?D|MBA|B\.?S\.?|M\.?S\.?|B\.?A\.?|M\.?A\.?|Associate|Doctorate|Diploma|Certificate|High School|GED/i;
+  const schoolPatterns = /University|College|Institute|School|Academy|Polytechnic/i;
 
   for (const line of lines) {
     const trimmed = line.trim();
-    
-    // Skip bullet points for now
-    if (trimmed.startsWith('•') || trimmed.startsWith('-')) {
+
+    // Skip bullet points — add as details to current entry
+    if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
       if (current) {
         if (!current.details) current.details = [];
-        current.details.push(trimmed.replace(/^[•\-]\s*/, ''));
+        current.details.push(trimmed.replace(/^[•\-\*]\s*/, ''));
       }
       continue;
     }
 
-    // Check for degree keywords
-    const degreePatterns = /Bachelor|Master|Ph\.?D|MBA|B\.?S\.?|M\.?S\.?|B\.?A\.?|M\.?A\.?|Associate|Doctorate/i;
+    if (!trimmed) continue;
+
+    const hasDegree = degreePatterns.test(trimmed);
+    const hasSchool = schoolPatterns.test(trimmed);
     const hasDate = /\d{4}/.test(trimmed);
-    
-    if (degreePatterns.test(trimmed) || hasDate || trimmed.includes('University') || trimmed.includes('College') || trimmed.includes('Institute')) {
+    const hasGpa = /GPA/i.test(trimmed);
+
+    // Determine if this line starts a new education entry or continues the current one
+    // A line is a new entry if it has a degree keyword, school keyword, OR it's a standalone
+    // non-continuation line (first line, or current entry already has a school and degree)
+    const isNewEntry = hasDegree || hasSchool ||
+                       (current === null && trimmed.length > 0) ||
+                       (current !== null && current.school && current.degree && !hasDate && !hasGpa);
+
+    if (isNewEntry && !hasGpa) {
+      // Save previous entry
       if (current) {
         education.push(current);
       }
-      
+
       current = {
         school: '',
         degree: '',
@@ -309,58 +322,63 @@ function parseEducation(text) {
         details: []
       };
 
-      // Parse education line
-      // Common formats:
-      // "Degree in Field - School | Date"
-      // "School | Degree | Date"
-      // "Degree, School, Date"
-      
+      // Parse line with pipe separators
       if (trimmed.includes('|')) {
         const parts = trimmed.split('|').map(p => p.trim());
         for (const part of parts) {
           if (/\d{4}/.test(part) && !current.graduationDate) {
             current.graduationDate = part;
-          } else if (degreePatterns.test(part)) {
+          } else if (degreePatterns.test(part) && !current.degree) {
             current.degree = part;
-          } else if (part.includes('University') || part.includes('College') || part.includes('Institute')) {
+          } else if (schoolPatterns.test(part) && !current.school) {
+            current.school = part;
+          } else if (!current.school && !schoolPatterns.test(part) && !degreePatterns.test(part)) {
+            // If no school yet and this doesn't look like degree, treat as school
             current.school = part;
           } else if (!current.field) {
             current.field = part;
           }
         }
       } else {
-        // Try to extract parts
+        // Single line — extract what we can
         const dateMatch = trimmed.match(/\d{4}(\s*[-–]\s*\d{4})?/);
         if (dateMatch) {
           current.graduationDate = dateMatch[0];
         }
-        
+
         const degreeMatch = trimmed.match(degreePatterns);
         if (degreeMatch) {
-          // Find the degree phrase
           const degreeStart = trimmed.indexOf(degreeMatch[0]);
-          const beforeDegree = trimmed.substring(0, degreeStart).trim();
+          const beforeDegree = trimmed.substring(0, degreeStart).trim().replace(/[-,|]\s*$/, '').trim();
           const afterDegree = trimmed.substring(degreeStart).trim();
-          
-          if (beforeDegree && (beforeDegree.includes('University') || beforeDegree.includes('College'))) {
+
+          if (beforeDegree) {
             current.school = beforeDegree;
           }
-          
+
           // Extract degree and field
-          const inMatch = afterDegree.match(/in\s+([^,|]+)/i);
+          const inMatch = afterDegree.match(/in\s+([^,|(\d]+)/i);
           if (inMatch) {
             current.field = inMatch[1].trim();
             current.degree = afterDegree.substring(0, afterDegree.indexOf(' in ')).trim();
           } else {
-            current.degree = afterDegree.replace(/\d{4}.*/, '').trim();
+            current.degree = afterDegree.replace(/\d{4}.*/, '').replace(/[,|]\s*$/, '').trim();
           }
         }
-        
-        // Look for school
+
+        // Look for school name
         if (!current.school) {
-          const schoolMatch = trimmed.match(/([\w\s]+(?:University|College|Institute)[^,|]*)/i);
+          const schoolMatch = trimmed.match(/([\w\s'.]+(?:University|College|Institute|School|Academy)[^,|]*)/i);
           if (schoolMatch) {
             current.school = schoolMatch[1].trim();
+          }
+        }
+
+        // If still no school and no degree found, use the whole line as school name
+        if (!current.school && !current.degree) {
+          const textWithoutDate = trimmed.replace(/\d{4}(\s*[-–]\s*\d{4})?/, '').replace(/[,|]\s*$/, '').trim();
+          if (textWithoutDate) {
+            current.school = textWithoutDate;
           }
         }
       }
@@ -369,6 +387,26 @@ function parseEducation(text) {
       const gpaMatch = trimmed.match(/GPA[:\s]*(\d+\.?\d*)/i);
       if (gpaMatch) {
         current.gpa = gpaMatch[1];
+      }
+    } else if (current) {
+      // Continuation line — fill in missing fields
+      const dateMatch = trimmed.match(/\d{4}(\s*[-–]\s*\d{4})?/);
+      const gpaMatch = trimmed.match(/GPA[:\s]*(\d+\.?\d*)/i);
+
+      if (gpaMatch) {
+        current.gpa = gpaMatch[1];
+      } else if (dateMatch && !current.graduationDate) {
+        current.graduationDate = dateMatch[0];
+        const remainder = trimmed.replace(dateMatch[0], '').replace(/[,|]\s*$/, '').trim();
+        if (remainder && !current.school) current.school = remainder;
+      } else if (degreePatterns.test(trimmed) && !current.degree) {
+        current.degree = trimmed;
+      } else if (!current.school) {
+        current.school = trimmed;
+      } else if (!current.degree) {
+        current.degree = trimmed;
+      } else if (!current.field) {
+        current.field = trimmed;
       }
     }
   }

@@ -7,14 +7,16 @@ import { useState, useRef, useEffect } from 'react';
 import { templates, colorPresets } from './templates';
 import { parseResumeText } from '../utils/parseResumeText';
 import { generatePDF } from '../utils/generatePDF';
-import { Download, Lock, Check, ChevronLeft, ChevronRight, Palette, Eye, X } from 'lucide-react';
+import { Download, Lock, Check, ChevronLeft, ChevronRight, Palette, Eye, X, FileText, FileDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-export default function TemplateSelector({ 
-  resumeText, 
+export default function TemplateSelector({
+  resumeText,
   userSubscription = 'free', // 'free' or 'pro'
   companyName = 'Company',
-  onClose 
+  onClose,
+  onDownloadWord,
+  onDownloadText
 }) {
   const [selectedTemplate, setSelectedTemplate] = useState('modern');
   const [accentColor, setAccentColor] = useState(templates.modern.defaultColor);
@@ -216,6 +218,24 @@ export default function TemplateSelector({
             >
               🖨️ Print
             </button>
+            {onDownloadText && (
+              <button
+                onClick={onDownloadText}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg text-sm font-medium"
+              >
+                <FileText className="w-4 h-4" />
+                Download TXT
+              </button>
+            )}
+            {onDownloadWord && (
+              <button
+                onClick={onDownloadWord}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg text-sm font-medium"
+              >
+                <FileDown className="w-4 h-4" />
+                Download Word
+              </button>
+            )}
             <button
               onClick={handleDownload}
               disabled={isGenerating || !canUseTemplate(selectedTemplate)}

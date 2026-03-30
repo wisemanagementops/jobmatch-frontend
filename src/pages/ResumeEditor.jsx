@@ -276,6 +276,17 @@ export default function ResumeEditor() {
                   />
                   <input
                     type="text"
+                    value={edu.location || ''}
+                    onChange={(e) => {
+                      const updated = [...resume.education];
+                      updated[index] = { ...edu, location: e.target.value };
+                      updateField('education', updated);
+                    }}
+                    placeholder="Location (e.g., Arlington, TX)"
+                    className="px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <input
+                    type="text"
                     value={edu.graduation || ''}
                     onChange={(e) => {
                       const updated = [...resume.education];
